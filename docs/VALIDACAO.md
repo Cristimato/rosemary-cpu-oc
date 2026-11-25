@@ -11,6 +11,7 @@ Aparelho: Redmi Note 10S (`rosemary`), kernel `4.19.325-cip134-st18-YuuriLegacy:
 | 2026-11-25 | `stab 30 6 7` + `mon.sh` | cpu6 778 / cpu7 761 rodadas, **0 erros**, 2111000 kHz @ 1025000 µV, 60 °C |
 | 2026-11-25 (v5.1) | troca ao vivo v5 → v5.1 | `rmmod` volta tudo a 2050000; `big_mhz=2113` e `little_mhz=2100` recusados (EINVAL) |
 | 2026-11-25 (v5.1) | `stab 60 6 7` + `stab 25 6 7` + `mon.sh` | 0 erros (cpu6 1524 / cpu7 1546 rodadas), 2111000 kHz @ 1025000 µV, 56 °C |
+| 2026-11-25 (v5.1) | zip da release instalado pelo KernelSU + reboot | `cpuinfo_max_freq` 2112000, anti-bootloop confirmou "5 min estável" |
 | 2026-11-21 → 25 | uso diário, vários boots | anti-bootloop sempre confirmou "5 min estável" |
 
 Na versão atual, `cpuinfo_max_freq`, `scaling_available_frequencies` e
