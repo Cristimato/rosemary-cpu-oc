@@ -1,6 +1,6 @@
 id=rmoc_oc
 name=Rosemary CPU OC (A76 2112 MHz)
-version=v5.0
-versionCode=5
+version=v5.1
+versionCode=51
 author=Cristimato
 description=MT6785/Helio G95: OPP0 dos núcleos grandes (A76) 2050 → 2112 MHz (+3%, teto do firmware SSPM), +4 passos de tensão via EEM. Anti-bootloop e kill switch (/data/adb/rmoc_disable).

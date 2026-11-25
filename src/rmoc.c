@@ -32,11 +32,17 @@ extern long probe_kernel_read(void *dst, const void *src, size_t size);
 #define CL_LL		0
 #define CL_L		1
 
-/* Hard safety limits (MHz) */
+/*
+ * Hard limits (MHz), measured on rosemary:
+ *  - big: the SSPM firmware accepts OPP0 up to 2112 exactly; 2113+ halves
+ *    the PLL (~1060 MHz) or falls back to OPP1.
+ *  - little: anything above 2000 halves the PLL; raw workarounds panicked.
+ *    LL_MAX == LL_STOCK keeps little_mhz probe-only.
+ */
 #define LL_STOCK	2000
 #define L_STOCK		2050
-#define LL_MAX		2200
-#define L_MAX		2400
+#define LL_MAX		2000
+#define L_MAX		2112
 
 static uint big_mhz;
 module_param(big_mhz, uint, 0444);
@@ -175,19 +181,19 @@ static void fix_kernel_table(u32 mhz)
 			ci = (unsigned int *)((char *)pol + oci);
 			cimax = buf[oci / 4];
 			cimin = buf[oci / 4 + 1];
+			if (o0.cpufreq_khz != L_STOCK * 1000 || f0.frequency != L_STOCK * 1000 ||
+			    cimax != L_STOCK * 1000 || cimin != ol.cpufreq_khz) {
+				pr_err("rmoc: unexpected values opp=%u tbl=%u cimax=%u cimin=%u last=%u, NOT fixed\n",
+				       o0.cpufreq_khz, f0.frequency, cimax, cimin, ol.cpufreq_khz);
+				return;
+			}
+			/* all checks passed: only now touch time_in_state */
 			{
 				struct mt_cpu_freq_info_m o1;
 
-				if (!probe_kernel_read(&o1, &c.opp_tbl[1], sizeof(o1)) &&
-				    o0.cpufreq_khz == L_STOCK * 1000)
+				if (!probe_kernel_read(&o1, &c.opp_tbl[1], sizeof(o1)))
 					fix_stats_table(buf, o0.cpufreq_khz, o1.cpufreq_khz, newk);
 			}
-		}
-		if (o0.cpufreq_khz != L_STOCK * 1000 || f0.frequency != L_STOCK * 1000 ||
-		    cimax != L_STOCK * 1000 || cimin != ol.cpufreq_khz) {
-			pr_err("rmoc: unexpected values opp=%u tbl=%u cimax=%u cimin=%u last=%u, NOT fixed\n",
-			       o0.cpufreq_khz, f0.frequency, cimax, cimin, ol.cpufreq_khz);
-			return;
 		}
 	}
 	kp_orig_khz = p->opp_tbl[0].cpufreq_khz;

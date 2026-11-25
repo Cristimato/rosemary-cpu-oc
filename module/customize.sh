@@ -2,15 +2,12 @@
 # Instalação do rmoc_oc (KernelSU / Magisk / APatch)
 SKIPUNZIP=0
 
-ui_print "- Rosemary CPU OC v5.0 (A76 2050 -> 2112 MHz)"
+ui_print "- Rosemary CPU OC v5.1 (A76 2050 -> 2112 MHz)"
 
 PLAT=$(getprop ro.board.platform)
 DEV=$(getprop ro.product.device)
 [ "$PLAT" = "mt6785" ] || abort "! Plataforma $PLAT não suportada (só MT6785 / Helio G95)"
-case "$DEV" in
-  rosemary|maltose|secret) ;;
-  *) ui_print "! Aviso: aparelho '$DEV' não testado (testado: rosemary)";;
-esac
+[ "$DEV" = "rosemary" ] || ui_print "! Aviso: aparelho '$DEV' não testado (testado: rosemary)"
 [ "$ARCH" = "arm64" ] || abort "! Arquitetura $ARCH não suportada"
 
 KREL=$(uname -r)

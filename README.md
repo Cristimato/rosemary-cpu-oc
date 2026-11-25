@@ -21,13 +21,16 @@ trocar o kernel e sem gravar nada em partição.
 - **Root:** KernelSU / SukiSU (testado); Magisk e APatch devem funcionar (zip padrão)
 
 O `rmoc.ko` pré-compilado só é carregado no kernel validado: o serviço confere
-`uname -r` e aborta em qualquer outro. Para outro kernel 4.19 do MT6785,
+`uname -r` e aborta em qualquer outro. O `vermagic` do binário
+(`4.19.325-Yuuri:[Shuumatsu]-…`) vem da árvore de build, não do kernel do
+aparelho. Ele carrega porque o kernel usa `CONFIG_MODVERSIONS`, que valida
+pelos CRCs dos símbolos e ignora o nome da versão. Para outro kernel 4.19 do MT6785,
 recompile (ver [Compilar](#compilar)) e ajuste `KERNEL_OK` em
 `module/service.sh`.
 
 ## Instalação
 
-1. Baixe `rmoc_oc-v5.0.zip` em [Releases](../../releases).
+1. Baixe `rmoc_oc-v5.1.zip` em [Releases](../../releases).
 2. Instale pelo gerenciador de root e reinicie.
 3. Aguarde ~90 s após o boot e confira:
 
@@ -47,7 +50,24 @@ su -c cat /proc/cpufreq/MT_CPU_DVFS_L/cpufreq_oppidx           # 0 (2112000, 102
 | Validação da tabela | O módulo só escreve se a tabela CSRAM tiver o formato esperado (terminador, frequências decrescentes, OPP0 = stock). |
 | Reversível | `rmmod rmoc` devolve os valores stock na hora. A CSRAM é volátil: sem o módulo, o próximo boot é 100 % stock. |
 
+> **Atenção ao anti-bootloop:** ele não distingue travamento de reinício
+> normal. Se você reiniciar nos primeiros ~6,5 min após o boot (90 s + 5 min),
+> o próximo boot desliga o OC e cria `/data/adb/rmoc_disable`. Para religar:
+> `su -c rm /data/adb/rmoc_disable` e reinicie.
+
 **Desinstalar:** remova pelo gerenciador e reinicie.
+
+**Desligar sem reiniciar:**
+
+```sh
+su -c 'rmmod rmoc; echo "setopp 0 0" > /proc/eem/EEM_DET_B/eem_setmargin
+P=/sys/devices/system/cpu/cpufreq/policy6; m=$(cat $P/scaling_max_freq)
+echo 1986000 > $P/scaling_max_freq; sleep 0.3; echo $m > $P/scaling_max_freq'
+```
+
+O `rmmod` devolve as tabelas ao stock na hora. A troca do `scaling_max_freq`
+força o SSPM a reler o OPP0; sem ela, o clock antigo continua até a próxima
+mudança de frequência.
 
 ## Limitações conhecidas
 
@@ -55,8 +75,8 @@ su -c cat /proc/cpufreq/MT_CPU_DVFS_L/cpufreq_oppidx           # 0 (2112000, 102
   grande pelo PPM (`sysboost_cluster_freqidx_limit`, usuário 8 / `XM_THERM`) e o
   2112 só aparece com o aparelho frio. O módulo não mexe nisso de propósito.
 - **Cluster pequeno (A55):** não suportado. Acima de 2000 MHz o firmware divide
-  o PLL por 2, e contornar isso derrubou o kernel nos testes. O parâmetro
-  `little_mhz` existe só para diagnóstico.
+  o PLL por 2, e contornar isso derrubou o kernel nos testes. O módulo recusa
+  `little_mhz` diferente de 2000 e `big_mhz` acima de 2112.
 - **Undervolt:** não empilhe undervolt negativo no cluster grande
   (`eem_offset` B < 0). Com −16 passos o OPP0 rodou a 0,925 V e travou o aparelho.
 
@@ -66,9 +86,15 @@ Precisa da árvore do kernel 4.19 do aparelho com o **mesmo `.config`** do kerne
 em execução (`/proc/config.gz`) e `make modules_prepare` feito.
 
 ```sh
-KDIR=~/kernel tools/build.sh      # compila, corrige relocação, checa x18, copia p/ module/
+# kernel validado (YuuriLegacy:3): precisa da correção do campo exit
+KDIR=~/kernel EXIT_FIX=0x378:0x370 tools/build.sh
 tools/make_module.sh              # gera out/rmoc_oc-<versão>.zip
 ```
+
+`EXIT_FIX` só serve para kernels cujo `struct module` difere da árvore de
+fonte. Em outro kernel, compile **sem** ele primeiro. Use só se o módulo
+aparecer como `[permanent]` em `/proc/modules`. O `fixko.py` confere que a
+relocação alterada é mesmo a de `cleanup_module` e não mexe em nada se não for.
 
 Ferramentas de teste em `tools/`:
 

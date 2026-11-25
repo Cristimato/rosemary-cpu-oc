@@ -77,6 +77,8 @@ cifrado, com risco real de brick.
   x18 é lixo, e o `insmod` derruba o kernel. O `build.sh` checa isso.
 - **`exit` em `__this_module`:** o kernel do aparelho tem o campo em 0x370, e a
   árvore em 0x378. Sem o `fixko.py` o módulo carrega, mas fica `[permanent]`.
+  A correção é específica deste kernel, por isso o `build.sh` só a aplica com
+  `EXIT_FIX`.
 - **`probe_kernel_read`:** o aparelho exporta o nome antigo (4.19), não
   `copy_from_kernel_nofault`, por isso o `extern` manual.
 - **`cpu_dvfs[]` fica na imagem do kernel:** `virt_addr_valid()` é sempre

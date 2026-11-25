@@ -7,3 +7,5 @@ out/
 modules.order
 Module.symvers
 __pycache__/
+src/*.ko
+*.mod
